@@ -1,6 +1,6 @@
 {
   "name": "ai-video-generator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate narrated short-form videos from a prompt with Cloudflare Workers AI, Pexels, and ffmpeg.",
   "type": "module",
   "main": "./dist/index.js",
