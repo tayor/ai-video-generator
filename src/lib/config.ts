@@ -13,6 +13,7 @@ import type {
 
 const orientationSchema = z.enum(['portrait', 'landscape']);
 const visualSourceProfileSchema = z.enum(['hybrid', 'stock-video', 'stock-image', 'ai-image']);
+const captionStyleSchema = z.enum(['classic', 'tiktok']);
 const captionPositionSchema = z.enum([
   'top',
   'center',
@@ -207,6 +208,11 @@ export function inspectConfig(
     );
   }
 
+  const captionStyleResult = captionStyleSchema.safeParse(env.CAPTION_STYLE ?? 'tiktok');
+  if (!captionStyleResult.success) {
+    errors.push('CAPTION_STYLE must be one of: classic, tiktok.');
+  }
+
   const cloudflareAccountId = normalizeConfiguredValue(env.CLOUDFLARE_ACCOUNT_ID);
   const cloudflareApiToken = normalizeConfiguredValue(env.CLOUDFLARE_API_TOKEN);
   const pexelsApiKey = normalizeConfiguredValue(env.PEXELS_API_KEY);
@@ -219,6 +225,7 @@ export function inspectConfig(
   }
 
   const visualSourceProfile = visualSourceProfileResult.success ? visualSourceProfileResult.data : 'hybrid';
+  const captionStyle = captionStyleResult.success ? captionStyleResult.data : 'tiktok';
   const visualSourceResolution = resolveAvailableVisualSources(
     visualSourceProfile,
     Boolean(pexelsApiKey)
@@ -254,14 +261,31 @@ export function inspectConfig(
       normalizedOverrides.captionsEnabled ?? env.CAPTIONS_ENABLED,
       true
     ),
-    captionFontName: env.CAPTION_FONT_FACE ?? 'Arial',
-    captionFontSize: parseInteger(env.CAPTION_FONT_SIZE, 64, 'CAPTION_FONT_SIZE', errors, 12),
+    captionStyle,
+    captionFontName: env.CAPTION_FONT_FACE ?? (captionStyle === 'tiktok' ? 'NanumSquareRound' : 'Arial'),
+    captionFontSize: parseInteger(
+      env.CAPTION_FONT_SIZE,
+      captionStyle === 'tiktok' ? 90 : 64,
+      'CAPTION_FONT_SIZE',
+      errors,
+      12
+    ),
     captionColor: env.CAPTION_FONT_COLOR ?? 'white',
+    captionHighlightColor:
+      env.CAPTION_HIGHLIGHT_COLOR ?? (captionStyle === 'tiktok' ? 'green' : env.CAPTION_FONT_COLOR ?? 'white'),
     captionOutlineColor: env.CAPTION_STROKE_COLOR ?? 'black',
     captionOutlineWidth: parseNumber(
       env.CAPTION_STROKE_WIDTH,
-      3,
+      captionStyle === 'tiktok' ? 7 : 3,
       'CAPTION_STROKE_WIDTH',
+      errors,
+      0
+    ),
+    captionBold: parseBoolean(env.CAPTION_BOLD, captionStyle === 'tiktok'),
+    captionShadowDepth: parseNumber(
+      env.CAPTION_SHADOW_DEPTH,
+      0,
+      'CAPTION_SHADOW_DEPTH',
       errors,
       0
     ),
@@ -269,7 +293,7 @@ export function inspectConfig(
       ? captionPositionResult.data
       : 'bottom_center') as CaptionPosition,
     fps: parseInteger(env.VIDEO_FPS, 30, 'VIDEO_FPS', errors, 1),
-    captionMaxWords: parseInteger(env.CAPTION_MAX_WORDS, 6, 'CAPTION_MAX_WORDS', errors, 1),
+    captionMaxWords: parseInteger(env.CAPTION_MAX_WORDS, captionStyle === 'tiktok' ? 3 : 6, 'CAPTION_MAX_WORDS', errors, 1),
     captionMaxChars: parseInteger(env.CAPTION_MAX_CHARS, 28, 'CAPTION_MAX_CHARS', errors, 5),
     captionMaxDurationSeconds: parseNumber(
       env.CAPTION_MAX_DURATION_SECONDS,
@@ -335,11 +359,15 @@ PEXELS_API_KEY=your_pexels_api_key_here
 VIDEO_ORIENTATION=portrait
 VIDEO_FPS=30
 CAPTIONS_ENABLED=true
-CAPTION_FONT_SIZE=64
+CAPTION_STYLE=tiktok
+CAPTION_FONT_SIZE=72
 CAPTION_FONT_COLOR=white
-CAPTION_FONT_FACE=Arial
-CAPTION_STROKE_WIDTH=3
+CAPTION_HIGHLIGHT_COLOR=green
+CAPTION_FONT_FACE=NanumSquareRound
+CAPTION_STROKE_WIDTH=4.5
 CAPTION_STROKE_COLOR=black
+CAPTION_BOLD=true
+CAPTION_SHADOW_DEPTH=0
 CAPTION_POSITION=bottom_center
 CAPTION_MAX_WORDS=6
 CAPTION_MAX_CHARS=28

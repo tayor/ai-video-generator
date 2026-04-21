@@ -11,5 +11,7 @@ describe('init onboarding template', () => {
     expect(template).toContain('CLOUDFLARE_GEMMA_REVIEW_MODEL=@cf/google/gemma-4-26b-a4b-it');
     expect(template).toContain('VIDEO_REVIEW_ENABLED=true');
     expect(template).toContain('VISUAL_SOURCE_PROFILE=hybrid');
+    expect(template).toContain('CAPTION_STYLE=tiktok');
+    expect(template).toContain('CAPTION_FONT_FACE=NanumSquareRound');
   });
 });

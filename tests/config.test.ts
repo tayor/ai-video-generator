@@ -15,6 +15,12 @@ describe('config inspection', () => {
     expect(inspection.warnings[0]).toContain('PEXELS_API_KEY');
     expect(inspection.config?.visualSourceProfile).toBe('hybrid');
     expect(inspection.config?.availableVisualSources).toEqual(['ai_image']);
+    expect(inspection.config?.captionStyle).toBe('tiktok');
+    expect(inspection.config?.captionFontName).toBe('NanumSquareRound');
+    expect(inspection.config?.captionOutlineWidth).toBe(7);
+    expect(inspection.config?.captionFontSize).toBe(90);
+    expect(inspection.config?.captionMaxWords).toBe(3);
+    expect(inspection.config?.captionHighlightColor).toBe('green');
     expect(inspection.config?.videoReviewEnabled).toBe(true);
     expect(inspection.config?.videoReviewMaxIterations).toBe(1);
   });
@@ -32,6 +38,7 @@ describe('config inspection', () => {
     const template = createEnvTemplate('ai-image');
 
     expect(template).toContain('VISUAL_SOURCE_PROFILE=ai-image');
+    expect(template).toContain('CAPTION_STYLE=tiktok');
     expect(template).toContain('VIDEO_REVIEW_ENABLED=true');
     expect(template).toContain('CLOUDFLARE_ACCOUNT_ID=');
   });

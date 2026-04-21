@@ -147,6 +147,12 @@ ai-video-generator review-sample
 
 Creates a short text-only sample video, extracts review frames with ffmpeg, and checks that Gemma can read the rendered content correctly.
 
+## Caption styles
+
+`init` now writes a TikTok-style caption preset by default for portrait videos. That preset uses uppercase display text, automatic multi-line balancing to avoid horizontal overflow, and word-by-word highlight overlays timed from Whisper timestamps.
+
+Set `CAPTION_STYLE=classic` if you want the older single-layer subtitle look instead. You can tune the active-word color and styling through the `CAPTION_*` keys in `.env`.
+
 ## Review loop
 
 By default, every render goes through a Gemma review pass. If Gemma finds problems, the feedback is fed back into Kimi and the generator reruns the story + visual plan up to the configured retry limit.
@@ -177,11 +183,15 @@ Render keys:
 VIDEO_ORIENTATION=portrait
 VIDEO_FPS=30
 CAPTIONS_ENABLED=true
-CAPTION_FONT_SIZE=64
+CAPTION_STYLE=tiktok
+CAPTION_FONT_SIZE=72
 CAPTION_FONT_COLOR=white
-CAPTION_FONT_FACE=Arial
-CAPTION_STROKE_WIDTH=3
+CAPTION_HIGHLIGHT_COLOR=green
+CAPTION_FONT_FACE=NanumSquareRound
+CAPTION_STROKE_WIDTH=4.5
 CAPTION_STROKE_COLOR=black
+CAPTION_BOLD=true
+CAPTION_SHADOW_DEPTH=0
 CAPTION_POSITION=bottom_center
 CAPTION_MAX_WORDS=6
 CAPTION_MAX_CHARS=28

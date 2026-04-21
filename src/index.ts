@@ -7,6 +7,7 @@ export type {
   AppConfig,
   CaptionCue,
   CaptionPosition,
+  CaptionStyle,
   CaptionWord,
   GeneratedVideoResult,
   Orientation,

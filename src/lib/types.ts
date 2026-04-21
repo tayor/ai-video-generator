@@ -1,6 +1,7 @@
 export type Orientation = 'portrait' | 'landscape';
 export type VisualSourceProfile = 'hybrid' | 'stock-video' | 'stock-image' | 'ai-image';
 export type VisualSourceType = 'stock_video' | 'stock_image' | 'ai_image';
+export type CaptionStyle = 'classic' | 'tiktok';
 export type CaptionPosition =
   | 'top'
   | 'center'
@@ -27,11 +28,15 @@ export interface AppConfig {
   readonly videoReviewMaxIterations: number;
   readonly orientation: Orientation;
   readonly captionsEnabled: boolean;
+  readonly captionStyle: CaptionStyle;
   readonly captionFontName: string;
   readonly captionFontSize: number;
   readonly captionColor: string;
+  readonly captionHighlightColor: string;
   readonly captionOutlineColor: string;
   readonly captionOutlineWidth: number;
+  readonly captionBold: boolean;
+  readonly captionShadowDepth: number;
   readonly captionPosition: CaptionPosition;
   readonly fps: number;
   readonly captionMaxWords: number;
@@ -50,6 +55,7 @@ export interface CaptionCue {
   readonly start: number;
   readonly end: number;
   readonly text: string;
+  readonly words: readonly CaptionWord[];
 }
 
 export interface StoryPlan {
