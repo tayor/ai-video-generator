@@ -1,202 +1,227 @@
-# Text To Video AI
+# AI Video Generator CLI
 
-Generate engaging videos from text prompts using AI. Perfect for creating YouTube Shorts, Instagram Reels, TikTok videos, and more.
+TypeScript CLI for generating narrated short-form videos with **Cloudflare Workers AI**, **Pexels**, and **ffmpeg**. It is packaged for **public npm publishing**, works with **`npx`**, and supports **global install** through `npm install -g`.
 
-[![GitHub stars](https://img.shields.io/github/stars/SamurAIGPT/Text-To-Video-AI?style=social)](https://github.com/SamurAIGPT/Text-To-Video-AI/stargazers)
+## What it uses
 
-> **Want to skip the setup?** Use our [Premium API](https://docs.vadoo.tv/docs/guide/ai-story/create-an-ai-video) to generate videos instantly - no installation required, production-ready, and scales with your needs.
+| Purpose | Provider | Model / API |
+| --- | --- | --- |
+| Script + visual planning | Cloudflare Workers AI | `@cf/moonshotai/kimi-k2.6` |
+| Reference-image understanding | Cloudflare Workers AI | `@cf/moonshotai/kimi-k2.6` (`image_url` message parts) |
+| Render review + iteration | Cloudflare Workers AI | `@cf/google/gemma-4-26b-a4b-it` |
+| Image generation fallback | Cloudflare Workers AI | `@cf/black-forest-labs/flux-1-schnell` |
+| Speech-to-text | Cloudflare Workers AI | `@cf/openai/whisper` |
+| Text-to-speech | Cloudflare Workers AI | `@cf/myshell-ai/melotts` |
+| Stock videos / photos | Pexels | Videos API + Photos API |
+| Rendering | Local binary | `ffmpeg` / `ffprobe` |
 
-## Demo
+## Requirements
 
-https://github.com/user-attachments/assets/1e440ace-8560-4e12-850e-c532740711e7
+- Node.js **20.18+**
+- `ffmpeg` and `ffprobe` on your `PATH`
+- Cloudflare **Account ID** and **Workers AI API token**
+- Optional: **Pexels API key** if you want stock footage or stock images
 
-## Features
+## Install
 
-- **AI-Powered Script Generation** - Automatically generates engaging scripts from any topic
-- **Multiple LLM Providers** - Choose from OpenAI, Groq, or Google Gemini
-- **Text-to-Speech** - Natural-sounding voiceovers with EdgeTTS (free) or ElevenLabs
-- **Automatic B-Roll** - Fetches relevant background videos from Pexels
-- **Customizable Captions** - Full control over font, color, position, and styling
-- **Multiple Orientations** - Portrait (9:16) for shorts or Landscape (16:9) for traditional video
-- **Speech-to-Text** - Accurate caption timing with Whisper or Deepgram
-
-## Quick Start
-
-**Option 1: Use the Premium API (Recommended)**
-
-Skip all setup and generate videos with a single API call:
-- [Premium API Documentation](https://docs.vadoo.tv/docs/guide/ai-story/create-an-ai-video)
-
-**Option 2: Google Colab**
-
-Run directly in your browser with our [Colab Notebook](Text_to_Video_example.ipynb)
-
-**Option 3: Local Installation**
-
-See installation instructions below.
-
-## Installation
-
-### Prerequisites
-
-- Python 3.8+
-- FFmpeg
-- ImageMagick
-
-**Windows users:** See [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md) for detailed setup instructions.
-
-### Setup
+### NPX
 
 ```bash
-# Clone the repository
-git clone https://github.com/SamurAIGPT/Text-To-Video-AI.git
-cd Text-To-Video-AI
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create your configuration file
-cp .env.example .env
+npx ai-video-generator init --profile hybrid
 ```
 
-Edit `.env` with your API keys (see Configuration below).
-
-### Usage
+### Global install
 
 ```bash
-python app.py "Your topic here"
+npm install -g ai-video-generator
+ai-video-generator init --profile hybrid
 ```
 
-Output will be saved as `rendered_video.mp4`
+### Local development
 
-## Configuration
-
-All settings are configured via the `.env` file. Copy `.env.example` to get started.
-
-### API Keys
-
-| Service | Required | Get API Key |
-|---------|----------|-------------|
-| Pexels | Always | [pexels.com/api](https://www.pexels.com/api/new/) |
-| OpenAI | If using OpenAI | [platform.openai.com](https://platform.openai.com/api-keys) |
-| Groq | If using Groq | [console.groq.com](https://console.groq.com/keys) |
-| Google Gemini | If using Gemini | [makersuite.google.com](https://makersuite.google.com/app/apikey) |
-| Deepgram | If using Deepgram STT | [console.deepgram.com](https://console.deepgram.com/) |
-| ElevenLabs | If using ElevenLabs TTS | [elevenlabs.io](https://elevenlabs.io/) |
-
-### Provider Selection
-
-```env
-# LLM Provider: openai, groq, or gemini
-LLM_PROVIDER=openai
-
-# Text-to-Speech: edgetts (free) or elevenlabs
-TTS_PROVIDER=edgetts
-
-# Speech-to-Text: whisper (free) or deepgram
-STT_PROVIDER=whisper
+```bash
+npm install
+npm run check
 ```
 
-### Video Settings
+## Onboarding profiles
+
+Use `init --profile <profile>` to create `.env` and `.env.example`.
+
+The profile defines the **available source pool**. **Kimi chooses the actual source for each cut/scene** from that pool.
+
+| Profile | Needs Cloudflare | Needs Pexels | Source pool Kimi can choose from |
+| --- | --- | --- | --- |
+| `hybrid` | Yes | Optional | `stock_video`, `stock_image`, `ai_image` |
+| `stock-video` | Yes | Yes | `stock_video` only |
+| `stock-image` | Yes | Yes | `stock_image` only |
+| `ai-image` | Yes | No | `ai_image` only |
+
+After `init`, edit `.env` and then run:
+
+```bash
+ai-video-generator doctor
+```
+
+Then verify the reviewer path against a generated sample video:
+
+```bash
+ai-video-generator review-sample
+```
+
+## Usage
+
+### Basic generation
+
+```bash
+ai-video-generator generate "5 surprising facts about volcanoes"
+```
+
+### Use reference images for Kimi K2.6 vision guidance
+
+```bash
+ai-video-generator generate "cinematic travel teaser for Iceland" \
+  --reference-image ./refs/ice-1.jpg ./refs/ice-2.jpg
+```
+
+### Use an AI-image-only source pool
+
+```bash
+npx ai-video-generator init --profile ai-image
+ai-video-generator generate "space startup launch trailer"
+```
+
+### Landscape output
+
+```bash
+ai-video-generator generate "history of electric cars" \
+  --orientation landscape \
+  --output ./out/history-of-evs.mp4
+```
+
+## Commands
+
+### `generate`
+
+```bash
+ai-video-generator generate <prompt...> [options]
+```
+
+Options:
+
+- `--output <path>`: output `.mp4` path or output directory
+- `--orientation <portrait|landscape>`
+- `--reference-image <paths...>`: local images passed to Kimi K2.6 as `image_url` content
+- `--no-captions`
+- `--keep-temp`
+
+### `init`
+
+```bash
+ai-video-generator init --profile hybrid
+```
+
+Creates or refreshes:
+
+- `.env.example`
+- `.env` (unless it already exists, or you pass `--force`)
+
+### `doctor`
+
+```bash
+ai-video-generator doctor
+```
+
+Checks:
+
+- `ffmpeg` / `ffprobe`
+- `.env` presence
+- Cloudflare credentials
+- Pexels requirements for the selected source profile
+
+### `review-sample`
+
+```bash
+ai-video-generator review-sample
+```
+
+Creates a short text-only sample video, extracts review frames with ffmpeg, and checks that Gemma can read the rendered content correctly.
+
+## Review loop
+
+By default, every render goes through a Gemma review pass. If Gemma finds problems, the feedback is fed back into Kimi and the generator reruns the story + visual plan up to the configured retry limit.
+
+Workers AI currently accepts the Gemma reviewer reliably through sampled video frames (`image_url` parts). The published model docs describe direct video/file support, but the live runtime rejected `file` parts during integration testing, so this CLI uses ffmpeg frame extraction for the review step.
+
+## `.env` reference
+
+Core keys:
 
 ```env
-# Orientation: portrait (1080x1920) or landscape (1920x1080)
-# Portrait recommended for YouTube Shorts, Instagram Reels, TikTok
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_API_TOKEN=...
+CLOUDFLARE_KIMI_MODEL=@cf/moonshotai/kimi-k2.6
+CLOUDFLARE_GEMMA_REVIEW_MODEL=@cf/google/gemma-4-26b-a4b-it
+CLOUDFLARE_FLUX_MODEL=@cf/black-forest-labs/flux-1-schnell
+CLOUDFLARE_WHISPER_MODEL=@cf/openai/whisper
+CLOUDFLARE_MELOTTS_MODEL=@cf/myshell-ai/melotts
+VIDEO_REVIEW_ENABLED=true
+VIDEO_REVIEW_MAX_ITERATIONS=1
+VISUAL_SOURCE_PROFILE=hybrid
+PEXELS_API_KEY=...
+```
+
+Render keys:
+
+```env
 VIDEO_ORIENTATION=portrait
-```
-
-### Caption Settings
-
-```env
-# Enable or disable captions
+VIDEO_FPS=30
 CAPTIONS_ENABLED=true
-
-# Caption styling
-CAPTION_FONT_SIZE=100
+CAPTION_FONT_SIZE=64
 CAPTION_FONT_COLOR=white
-CAPTION_FONT_FACE=Arial-Bold
+CAPTION_FONT_FACE=Arial
 CAPTION_STROKE_WIDTH=3
 CAPTION_STROKE_COLOR=black
 CAPTION_POSITION=bottom_center
+CAPTION_MAX_WORDS=6
+CAPTION_MAX_CHARS=28
+CAPTION_MAX_DURATION_SECONDS=4.2
 ```
 
-**Caption Position Options:** `center`, `top`, `bottom`, `bottom_center`, `bottom_left`, `bottom_right`
+## Output
 
-**Font Color Options:** `white`, `yellow`, `cyan`, `red`, `green`, `blue`, `magenta`
+Each run writes:
 
-### Voice Configuration
+- an `.mp4` video
+- a `.json` manifest next to the video with the generated script, cues, visual plan, and review history
 
-**EdgeTTS (Free):**
-```env
-EDGETTS_VOICE=en-AU-WilliamNeural
+If you pass `--keep-temp`, the ffmpeg working directory is kept for inspection.
+
+## Publish notes
+
+The package is configured for public npm publishing:
+
+- package name: `ai-video-generator`
+- CLI binary: `ai-video-generator`
+- `publishConfig.access=public`
+- `prepack` runs the TypeScript build before publishing
+- license: MIT
+
+First publish:
+
+```bash
+npm publish --access public
 ```
 
-Popular voices:
-- `en-US-ChristopherNeural` - American male
-- `en-US-JennyNeural` - American female
-- `en-GB-RyanNeural` - British male
-- `en-GB-SoniaNeural` - British female
-- `en-AU-WilliamNeural` - Australian male
+## License
 
-**ElevenLabs:**
-```env
-ELEVENLABS_API_KEY=your_key
-ELEVENLABS_VOICE_ID=your_voice_id
+MIT.
+
+## Development
+
+```bash
+npm install
+npm run build
+npm test
+npm run check
 ```
-
-## Tutorials
-
-- [YouTube Tutorial](https://www.youtube.com/watch?v=AXo6VfRUgic)
-- [Medium Guide](https://medium.com/@anilmatcha/text-to-video-ai-how-to-create-videos-for-free-a-complete-guide-a25c91de50b8)
-
-## Contributing
-
-We welcome contributions! To get started:
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## Premium API
-
-Looking for a production-ready solution? Our [Premium API](https://docs.vadoo.tv/docs/guide/ai-story/create-an-ai-video) offers:
-
-- No installation or setup required
-- Multiple video durations (30s to 10 minutes)
-- Advanced voice and language options
-- Custom styling and branding
-- Scalable infrastructure
-
-[Get Started with the API](https://docs.vadoo.tv/docs/guide/ai-story/create-an-ai-video)
-
----
-
-## Related Projects
-
-| Project | Description |
-|---------|-------------|
-| [AI Influencer Generator](https://github.com/SamurAIGPT/AI-Influencer-Generator) | Create AI-powered virtual influencers |
-| [AI YouTube Shorts Generator](https://github.com/SamurAIGPT/AI-Youtube-Shorts-Generator/) | Automated YouTube Shorts creation |
-| [Faceless Video Generator](https://github.com/SamurAIGPT/Faceless-Video-Generator) | Create videos without showing your face |
-| [AI B-roll Generator](https://github.com/Anil-matcha/AI-B-roll) | Generate B-roll footage with AI |
-
-### Vadoo AI Tools
-
-- [AI Video Generator](https://www.vadoo.tv/ai-video-generator)
-- [Text to Video AI](https://www.vadoo.tv/text-to-video-ai)
-- [Autoshorts AI](https://www.vadoo.tv/autoshorts-ai)
-- [Pixverse Alternative](https://www.vadoo.tv/pixverse-ai)
-- [Hailuo AI Alternative](https://www.vadoo.tv/hailuo-ai)
-- [Minimax AI Alternative](https://www.vadoo.tv/minimax-ai)
-
----
-
-## Support
-
-If you find this project useful, please consider giving it a star! Your support helps us continue improving the project.
-
-[![GitHub stars](https://img.shields.io/github/stars/SamurAIGPT/Text-To-Video-AI?style=social)](https://github.com/SamurAIGPT/Text-To-Video-AI/stargazers)

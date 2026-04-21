@@ -1,132 +1,105 @@
-# Windows Installation Guide
+# Windows Setup
 
-## Prerequisites
+## Requirements
 
-### 1. Install Python 3.10 or 3.11
+- Node.js **20.18+**
+- `ffmpeg` and `ffprobe`
+- Cloudflare Workers AI **Account ID** + **API token**
+- Optional: Pexels API key
 
-Download and install from https://www.python.org/downloads/
+This CLI no longer needs Python, Jupyter, or ImageMagick.
 
-**Important:** During installation, check ✅ "Add Python to PATH"
+## 1. Install Node.js
 
-Verify installation:
-```cmd
-python --version
+Download the current LTS release from:
+
+- https://nodejs.org/
+
+Verify:
+
+```powershell
+node --version
+npm --version
 ```
 
----
+## 2. Install ffmpeg
 
-### 2. Install FFmpeg
+### Winget
 
-**Option A: Using Scoop (Recommended)**
 ```powershell
-# Install Scoop first (run in PowerShell as Administrator)
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-irm get.scoop.sh | iex
+winget install Gyan.FFmpeg
+```
 
-# Install ffmpeg
+### Scoop
+
+```powershell
 scoop install ffmpeg
 ```
 
-**Option B: Using Chocolatey**
-```powershell
-# Install Chocolatey first (run in PowerShell as Administrator)
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+### Chocolatey
 
-# Install ffmpeg
+```powershell
 choco install ffmpeg
 ```
 
-**Option C: Manual Installation**
-1. Download from https://www.gyan.dev/ffmpeg/builds/ (get `ffmpeg-release-essentials.zip`)
-2. Extract to `C:\ffmpeg`
-3. Add `C:\ffmpeg\bin` to System PATH:
-   - Search "Environment Variables" in Windows
-   - Click "Environment Variables"
-   - Under "System variables", select "Path" → Edit
-   - Add `C:\ffmpeg\bin`
-   - Click OK and restart terminal
+Verify:
 
-Verify installation:
-```cmd
+```powershell
 ffmpeg -version
+ffprobe -version
 ```
 
----
+## 3. Run the CLI
 
-### 3. Install ImageMagick
+### NPX
 
-1. Download from https://imagemagick.org/script/download.php#windows
-   - Choose the installer ending with `-Q16-HDRI-x64-dll.exe`
-
-2. During installation:
-   - ✅ Check "Install legacy utilities (e.g. convert)"
-   - ✅ Check "Add application directory to your system path"
-
-3. **Configure for MoviePy** - Create/edit the file `C:\Users\<YourUsername>\.moviepy\config_defaults.py`:
-   ```python
-   IMAGEMAGICK_BINARY = r"C:\Program Files\ImageMagick-7.1.1-Q16-HDRI\magick.exe"
-   ```
-   (Adjust the path to match your installed version)
-
-Verify installation:
-```cmd
-magick -version
+```powershell
+npx ai-video-generator init --profile hybrid
 ```
 
----
+### Global install
 
-## Project Setup
-
-```cmd
-# Clone the repository
-git clone https://github.com/SamurAIGPT/Text-To-Video-AI.git
-cd Text-To-Video-AI
-
-# Create virtual environment (recommended)
-python -m venv venv
-venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy and configure environment file
-copy .env.example .env
-# Edit .env with your API keys (use notepad or any text editor)
-notepad .env
+```powershell
+npm install -g ai-video-generator
+ai-video-generator init --profile hybrid
 ```
 
-## Required API Keys
+## 4. Configure `.env`
 
-Get these API keys and add them to your `.env` file:
+Edit `.env` and set:
 
-| Service | Get API Key From |
-|---------|------------------|
-| OpenAI / Groq / Gemini | Choose one LLM provider |
-| Pexels | https://www.pexels.com/api/new/ |
-| Deepgram (optional) | https://console.deepgram.com/ |
-| ElevenLabs (optional) | https://elevenlabs.io/ |
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+- `PEXELS_API_KEY` if you want stock footage or stock images
 
-## Run the Application
+## 5. Verify setup
 
-```cmd
-python app.py "Your topic here"
+```powershell
+ai-video-generator doctor
+ai-video-generator review-sample
 ```
 
-Output will be saved as `rendered_video.mp4`
+## 6. Generate a video
 
----
+```powershell
+ai-video-generator generate "3 futuristic city facts"
+```
 
 ## Troubleshooting
 
-### "ffmpeg not found"
-- Restart your terminal/command prompt after installation
-- Verify PATH is set correctly: `echo %PATH%`
+### `ffmpeg` not found
 
-### "ImageMagick not found" or text not rendering
-- Make sure you installed with "legacy utilities" option
-- Create the MoviePy config file as shown above
-- Try running `magick -version` to verify installation
+- Restart the terminal after installation.
+- Confirm both `ffmpeg` and `ffprobe` are on `PATH`.
 
-### "PEXELS_API_KEY not found" or "KeyError: 'videos'"
-- Make sure your `.env` file has a valid `PEXELS_API_KEY`
-- Get a free key from https://www.pexels.com/api/new/
+### Cloudflare auth errors
+
+- Recheck `CLOUDFLARE_ACCOUNT_ID`
+- Recheck `CLOUDFLARE_API_TOKEN`
+- Make sure the token has **Workers AI Read** or **Workers AI Write**
+- If generation works but review fails, run `ai-video-generator review-sample` to confirm Gemma can read extracted frames from a local sample video
+
+### Pexels errors
+
+- `stock-video` and `stock-image` profiles require `PEXELS_API_KEY`
+- `hybrid` lets Kimi choose per cut from stock video, stock image, and AI image; without Pexels, only `ai_image` remains available

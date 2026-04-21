@@ -1,0 +1,48 @@
+import { describe, expect, it } from 'vitest';
+
+import { createEnvTemplate, inspectConfig } from '../src/lib/config.js';
+
+const baseEnv = {
+  CLOUDFLARE_ACCOUNT_ID: 'account-id',
+  CLOUDFLARE_API_TOKEN: 'api-token'
+};
+
+describe('config inspection', () => {
+  it('warns when hybrid mode has no pexels key', () => {
+    const inspection = inspectConfig(baseEnv);
+
+    expect(inspection.errors).toEqual([]);
+    expect(inspection.warnings[0]).toContain('PEXELS_API_KEY');
+    expect(inspection.config?.visualSourceProfile).toBe('hybrid');
+    expect(inspection.config?.availableVisualSources).toEqual(['ai_image']);
+    expect(inspection.config?.videoReviewEnabled).toBe(true);
+    expect(inspection.config?.videoReviewMaxIterations).toBe(1);
+  });
+
+  it('requires pexels in stock-video mode', () => {
+    const inspection = inspectConfig({
+      ...baseEnv,
+      VISUAL_SOURCE_PROFILE: 'stock-video'
+    });
+
+    expect(inspection.errors[0]).toContain('PEXELS_API_KEY');
+  });
+
+  it('creates a profile-specific env template', () => {
+    const template = createEnvTemplate('ai-image');
+
+    expect(template).toContain('VISUAL_SOURCE_PROFILE=ai-image');
+    expect(template).toContain('VIDEO_REVIEW_ENABLED=true');
+    expect(template).toContain('CLOUDFLARE_ACCOUNT_ID=');
+  });
+
+  it('treats placeholder credentials as missing', () => {
+    const inspection = inspectConfig({
+      CLOUDFLARE_ACCOUNT_ID: 'your_cloudflare_account_id_here',
+      CLOUDFLARE_API_TOKEN: 'your_cloudflare_api_token_here'
+    });
+
+    expect(inspection.errors).toContain('Missing CLOUDFLARE_ACCOUNT_ID.');
+    expect(inspection.errors).toContain('Missing CLOUDFLARE_API_TOKEN.');
+  });
+});
